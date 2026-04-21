@@ -1,0 +1,129 @@
+<!-- ... existing code ... -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: "思源黑体", "微软雅黑", sans-serif;
+            font-weight: 900;
+            transition: background-color 1s ease;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 全屏视频播放器 */
+        #weatherVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 左下角天气文字 */
+        .weather-text {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            font-size: 80px;
+            color: white;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.6), 
+                         -2px -2px 8px rgba(0, 0, 0, 0.6),
+                         2px -2px 8px rgba(0, 0, 0, 0.6),
+                         -2px 2px 8px rgba(0, 0, 0, 0.6);
+            z-index: 10;
+            letter-spacing: 10px;
+        }
+    </style>
+</head>
+<body>
+    <video id="weatherVideo" autoplay loop muted playsinline>
+        <source src="" type="video/mp4">
+        您的浏览器不支持视频播放
+    </video>
+    
+    <div class="weather-text" id="weatherText"></div>
+
+    <script>
+        // ===================== 这里填写你自己申请的 OpenWeatherMap API Key =====================
+        const API_KEY = "f2050130370b00f107ab8ad6de585285";
+
+        // 获取实时天气
+        async function getWeatherData() {
+            const videoElement = document.getElementById('weatherVideo');
+            const weatherText = document.getElementById('weatherText');
+
+            // 调用浏览器定位
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+
+                // 请求天气接口
+                const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=zh_cn`;
+                const response = await fetch(url);
+                const weatherInfo = await response.json();
+                
+                // 获取天气类型英文代码
+                const weatherType = weatherInfo.weather[0].main;
+
+                // ========== 天气判断 + 播放对应视频 + 显示文字 ==========
+                let videoPath = "";
+                let weatherDisplay = "";
+                
+                switch (weatherType) {
+                    case "Clear":
+                        videoPath = "videos/sunny.mp4";
+                        weatherDisplay = "大晴天";
+                        break;
+                    case "Clouds":
+                        videoPath = "videos/cloudy.mp4";
+                        weatherDisplay = "阴天";
+                        break;
+                    case "Rain":
+                    case "Drizzle":
+                        videoPath = "videos/rainy.mp4";
+                        weatherDisplay = "下雨天";
+                        break;
+                    case "Snow":
+                        videoPath = "videos/snowy.mp4";
+                        weatherDisplay = "下雪天";
+                        break;
+                    case "Mist":
+                    case "Fog":
+                    case "Haze":
+                        videoPath = "videos/foggy.mp4";
+                        weatherDisplay = "雾天";
+                        break;
+                    default:
+                        videoPath = "videos/cloudy.mp4";
+                        weatherDisplay = "多云";
+                }
+
+                // 设置视频源并播放
+                videoElement.querySelector('source').src = videoPath;
+                videoElement.load();
+                videoElement.play();
+                
+                // 显示天气文字
+                weatherText.innerText = weatherDisplay;
+
+            }, (error) => {
+                console.log("定位失败:", error);
+                // 定位失败时播放默认视频
+                videoElement.querySelector('source').src = "videos/default.mp4";
+                videoElement.load();
+                videoElement.play();
+                weatherText.innerText = "定位失败";
+            })
+        }
+
+        // 页面打开自动执行
+        window.onload = getWeatherData;
+    </script>
+<!-- ... existing code ... -->
